@@ -30,3 +30,7 @@ Thumbs.db
 # Temporary files
 temp/
 tmp/
+
+# Media analysis temporary files
+*.tmp.*
+media_temp/

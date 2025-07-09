@@ -1,0 +1,11 @@
+# Additional requirements for media info feature
+# Add these to your existing requirements.txt
+
+aiohttp>=3.8.0
+aiofiles>=0.8.0
+
+# Note: Other dependencies should already be in your main requirements.txt:
+# pyrogram>=2.0.0
+# pymongo
+# motor
+# etc.
