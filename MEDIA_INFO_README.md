@@ -9,12 +9,14 @@ This feature adds media information extraction capability to your Telegram bot w
 ### On-Demand Processing
 - Media information is extracted only when users click the "📋 Media Info" button
 - No pre-processing of existing database files required
-- Uses ffprobe (part of ffmpeg) for accurate media analysis
+- Uses ffprobe (part of ffmpeg) for detailed analysis when available
+- **Automatic fallback mode** when ffprobe is not installed
 
 ### Smart Optimization
-- Downloads only the first 2MB of files for analysis (sufficient for media headers)
+- Downloads only the first 3MB of files for analysis (sufficient for media headers)
 - Caches results temporarily (5 minutes) to avoid repeated processing
-- Auto-detects non-media files and provides basic info without downloading
+- **Automatic fallback** when ffprobe is not available
+- Intelligent file analysis using filename patterns and database info
 
 ### Temporary Display
 - Media info is shown for 2 minutes then auto-deleted to keep chats clean
@@ -23,34 +25,65 @@ This feature adds media information extraction capability to your Telegram bot w
 
 ## Features
 
-### Information Displayed
-- **Basic Info**: File format, duration, size, bitrate
-- **Video Details**: Codec, resolution (width x height)
-- **Audio Tracks**: Multiple audio tracks with language, codec, channels
-- **Subtitles**: Available subtitle tracks with languages
+### Two Modes of Operation
+
+#### **Full Mode (with ffprobe installed)**
+- **Complete Analysis**: File format, duration, size, bitrate
+- **Video Details**: Codec, resolution, framerate
+- **Audio Tracks**: Multiple tracks with language, codec, channels, sample rate
+- **Subtitles**: Available subtitle tracks with languages and codecs
+- **Chapters**: Movie/episode chapters with timestamps
 - **Smart Formatting**: Human-readable durations and file sizes
 
+#### **Fallback Mode (no ffprobe needed)**
+- **Basic Info**: File format (from extension/mime), size
+- **Intelligent Guessing**: Resolution from filename (1080p, 720p, etc.)
+- **Language Detection**: Audio languages from filename patterns
+- **No Installation Required**: Works immediately without server changes
+
 ### Example Output
+
+#### **Full Mode (with ffprobe)**
 ```
 📋 Media Information
 
-📁 File: Movie.2023.1080p.mkv
+📁 File: The.Avengers.2012.1080p.mkv
 📦 Format: MATROSKA,WEBM
-⏱ Duration: 2h 15m 30s
-📏 Size: 1.98 GB
-🔗 Bitrate: 8500 kbps
+⏱ Duration: 2h 23m 15s
+📏 Size: 1.40 GB
+🔗 Bitrate: 1372 kbps
 
-🎬 Video: h264 (1920x1080)
-🔊 Audio Tracks: 3
-   • English Audio (eng) - ac3 - 6ch
-   • Hindi Dub (hin) - aac - 2ch
-   • Commentary (eng) - mp3 - 2ch
+🎬 Video: h264 (1280x720)
+🔊 Audio Tracks: 2
+   • Hindi Audio (hin) - aac - 6ch
+   • English Audio (eng) - aac - 2ch
 
-💬 Subtitles: 5
-   • English (eng)
-   • Spanish (spa)
-   • French (fra)
-   • ... and 2 more
+💬 Subtitles: 1
+   • English (eng) - subrip
+
+📖 Chapters: 20 (showing first 5)
+   • Loki's Arrival - 0s
+   • Tesseract Lost - 8m 2s
+   • Natasha's Interrogation - 11m 49s
+   • ... and 17 more
+```
+
+#### **Fallback Mode (no ffprobe)**
+```
+📋 Media Information
+
+📁 File: The.Avengers.2012.720p.Hindi.English.mkv
+� Format: MATROSKA/MKV
+⏱ Duration: Not Available (Install ffmpeg for duration)
+📏 Size: 1.40 GB
+🔗 Bitrate: Not Available (Install ffmpeg for bitrate)
+
+💡 Limited info - Install ffmpeg for detailed analysis
+
+🎬 Video: Unknown (1280x720)
+🔊 Audio Tracks: 2
+   • Hindi (hin) - Unknown
+   • English (eng) - Unknown
 ```
 
 ## Files Modified
@@ -76,18 +109,38 @@ This feature adds media information extraction capability to your Telegram bot w
 - Processing stops immediately for corrupted or unsupported files
 - Background auto-deletion prevents memory buildup
 
-## Usage
+## Installation & Usage
+
+### Server Setup
+
+#### **Option 1: Install FFmpeg (Recommended for Full Features)**
+```bash
+# Ubuntu/Debian
+sudo apt update && sudo apt install ffmpeg
+
+# CentOS/RHEL/Rocky Linux
+sudo yum install epel-release
+sudo yum install ffmpeg
+
+# Verify installation
+ffprobe -version
+```
+
+#### **Option 2: Use Fallback Mode (No Installation)**
+- Feature works immediately with limited information
+- Good for servers where you can't install packages
+- Still provides useful basic information
 
 ### For Users
 1. Request any file from the bot as usual
 2. When the file is sent, look for the "📋 Media Info" button
-3. Click the button to see detailed media information
+3. Click the button to see media information
 4. Info will auto-delete after 2 minutes or can be closed manually
 
 ### For Admins
-- No configuration required
-- Feature works automatically once deployed
-- Monitor logs for any ffprobe errors if needed
+- **No configuration required** - works automatically
+- **Automatic fallback** if ffprobe is not available
+- Monitor logs to see which mode is being used
 
 ## Technical Details
 

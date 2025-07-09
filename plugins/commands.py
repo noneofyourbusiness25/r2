@@ -1150,7 +1150,8 @@ async def media_info_callback(client, query):
         # Show processing message
         processing_msg = await query.message.reply_text(
             "🔄 <b>Extracting media information...</b>\n\n"
-            "This may take a few seconds for the first time.",
+            f"📁 Analyzing: <code>{file_name}</code>\n"
+            "This may take a few seconds...",
             quote=True
         )
         
@@ -1179,7 +1180,11 @@ async def media_info_callback(client, query):
         else:
             await processing_msg.edit_text(
                 "❌ <b>Could not extract media information</b>\n\n"
-                "This file format might not be supported or the file might be corrupted."
+                f"📁 File: <code>{file_name}</code>\n"
+                "• File format might not be supported\n"
+                "• File might be corrupted\n"
+                "• Download may have failed\n\n"
+                "<i>Check bot logs for detailed error information.</i>"
             )
             
             # Auto-delete after 30 seconds
