@@ -43,6 +43,7 @@ from pyrogram import idle
 from lazybot import LazyPrincessBot
 from util.keepalive import ping_server
 from lazybot.clients import initialize_clients
+from util.ffmpeg_setup import setup_ffprobe
 
 
 ppath = "plugins/*.py"
@@ -74,6 +75,15 @@ async def Lazy_start():
     temp.BANNED_USERS = b_users
     temp.BANNED_CHATS = b_chats
     await Media.ensure_indexes()
+    
+    # Setup ffprobe for media analysis
+    print("Setting up media analysis tools...")
+    ffprobe_ready = await setup_ffprobe()
+    if ffprobe_ready:
+        print("✅ Media analysis ready (ffprobe available)")
+    else:
+        print("⚠️ Media analysis in fallback mode (ffprobe unavailable)")
+    
     me = await LazyPrincessBot.get_me()
     temp.ME = me.id
     temp.U_NAME = me.username

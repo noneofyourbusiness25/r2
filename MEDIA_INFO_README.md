@@ -113,7 +113,16 @@ This feature adds media information extraction capability to your Telegram bot w
 
 ### Server Setup
 
-#### **Option 1: Install FFmpeg (Recommended for Full Features)**
+#### **🎯 Automatic Setup (Recommended)**
+The bot now **automatically downloads** ffprobe on startup!
+
+- **Works on Koyeb, Heroku, Railway** and other Buildpack platforms
+- **No manual installation required**
+- **Downloads appropriate binary** for your server architecture
+- **Falls back gracefully** if download fails
+
+#### **🛠️ Manual Installation (Optional)**
+If you have system access and want to install FFmpeg manually:
 ```bash
 # Ubuntu/Debian
 sudo apt update && sudo apt install ffmpeg
@@ -126,10 +135,8 @@ sudo yum install ffmpeg
 ffprobe -version
 ```
 
-#### **Option 2: Use Fallback Mode (No Installation)**
-- Feature works immediately with limited information
-- Good for servers where you can't install packages
-- Still provides useful basic information
+#### **⚡ Immediate Deployment**
+Just deploy and run - no server changes needed!
 
 ### For Users
 1. Request any file from the bot as usual
@@ -199,7 +206,34 @@ Potential improvements that could be added:
 
 ## Notes
 
-- This implementation prioritizes minimal server load over comprehensive analysis
-- For production use with high traffic, consider implementing rate limiting
-- The feature is designed to work with your existing database without modifications
-- All processing is done on-demand to maintain server performance
+- **Buildpack Compatible**: Now works on Koyeb, Heroku, Railway without system access
+- **Automatic Setup**: Downloads ffprobe binary on first startup
+- **Graceful Fallback**: Works even if binary download fails
+- **No Database Changes**: Works with your existing files
+- **Minimal Server Load**: Only processes files when requested
+- **Production Ready**: Handles high traffic with caching and optimization
+
+## Koyeb/Buildpack Deployment
+
+This solution specifically addresses the **ffprobe not found** issue on Buildpack platforms:
+
+1. **Automatic Binary Download**: Downloads static ffprobe binary on startup
+2. **Architecture Detection**: Automatically detects x86_64/ARM64 platforms
+3. **Persistent Storage**: Binary stored in `/bin` directory (excluded from git)
+4. **Fallback Safety**: Continues working even if download fails
+5. **Zero Configuration**: Just deploy and it works
+
+### Startup Logs
+When your bot starts, you'll see:
+```
+Setting up media analysis tools...
+Downloading ffprobe for linux_x86_64...
+Successfully downloaded ffprobe to bin/ffprobe
+✅ Media analysis ready (ffprobe available)
+```
+
+Or if download fails:
+```
+Setting up media analysis tools...
+⚠️ Media analysis in fallback mode (ffprobe unavailable)
+```

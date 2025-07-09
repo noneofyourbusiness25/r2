@@ -4,12 +4,15 @@ import tempfile
 import os
 from typing import Optional, Dict, Any
 import logging
+from .ffmpeg_setup import setup_ffprobe, get_ffprobe_command
 
 logger = logging.getLogger(__name__)
 
 class MediaInfoExtractor:
     def __init__(self):
         self.info_cache = {}  # Temporary cache for media info
+        self.ffprobe_setup_attempted = False
+        self.ffprobe_available = False
         
     async def download_file_chunk(self, client, file_id: str, chunk_size: int = 3*1024*1024) -> Optional[str]:
         """Download first chunk of file for analysis"""
@@ -100,48 +103,58 @@ class MediaInfoExtractor:
                 logger.error("Failed to download file chunk")
                 return self._get_basic_info(file_name)
                 
-            # Try ffprobe first, fallback to basic analysis
-            logger.info("Attempting ffprobe analysis...")
+            # Ensure ffprobe is available
+            if not self.ffprobe_setup_attempted:
+                logger.info("Setting up ffprobe...")
+                self.ffprobe_available = await setup_ffprobe()
+                self.ffprobe_setup_attempted = True
             
-            # First try ffprobe
-            try:
-                cmd = [
-                    'ffprobe', '-v', 'quiet', '-print_format', 'json', 
-                    '-show_format', '-show_streams', '-show_chapters', temp_path
-                ]
-                
-                process = await asyncio.create_subprocess_exec(
-                    *cmd,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
-                )
-                
-                stdout, stderr = await process.communicate()
-                
-                if process.returncode == 0:
-                    try:
-                        probe_data = json.loads(stdout.decode())
-                        logger.info("Successfully used ffprobe for analysis")
-                        media_info = self._parse_probe_data(probe_data, file_name)
-                        
-                        # Cache the result temporarily (5 minutes)
-                        self.info_cache[file_id] = media_info
-                        logger.info(f"Cached detailed media info for {file_id}")
-                        
-                        # Clean cache after 5 minutes
-                        asyncio.create_task(self._clean_cache_after_delay(file_id, 300))
-                        
-                        return media_info
-                    except json.JSONDecodeError as e:
-                        logger.warning(f"Failed to parse ffprobe output: {e}")
-                else:
-                    error_msg = stderr.decode() if stderr else "ffprobe failed"
-                    logger.warning(f"ffprobe failed: {error_msg}")
+            # Try ffprobe first, fallback to basic analysis
+            if self.ffprobe_available:
+                ffprobe_cmd = get_ffprobe_command()
+                if ffprobe_cmd:
+                    logger.info(f"Using ffprobe: {ffprobe_cmd}")
                     
-            except FileNotFoundError:
-                logger.warning("ffprobe not found, using fallback mode")
-            except Exception as e:
-                logger.warning(f"ffprobe error: {e}, using fallback mode")
+                    try:
+                        cmd = [
+                            ffprobe_cmd, '-v', 'quiet', '-print_format', 'json', 
+                            '-show_format', '-show_streams', '-show_chapters', temp_path
+                        ]
+                        
+                        process = await asyncio.create_subprocess_exec(
+                            *cmd,
+                            stdout=asyncio.subprocess.PIPE,
+                            stderr=asyncio.subprocess.PIPE
+                        )
+                        
+                        stdout, stderr = await process.communicate()
+                        
+                        if process.returncode == 0:
+                            try:
+                                probe_data = json.loads(stdout.decode())
+                                logger.info("Successfully used ffprobe for detailed analysis")
+                                media_info = self._parse_probe_data(probe_data, file_name)
+                                
+                                # Cache the result temporarily (5 minutes)
+                                self.info_cache[file_id] = media_info
+                                logger.info(f"Cached detailed media info for {file_id}")
+                                
+                                # Clean cache after 5 minutes
+                                asyncio.create_task(self._clean_cache_after_delay(file_id, 300))
+                                
+                                return media_info
+                            except json.JSONDecodeError as e:
+                                logger.warning(f"Failed to parse ffprobe output: {e}")
+                        else:
+                            error_msg = stderr.decode() if stderr else "ffprobe failed"
+                            logger.warning(f"ffprobe failed: {error_msg}")
+                            
+                    except Exception as e:
+                        logger.warning(f"ffprobe execution error: {e}")
+                else:
+                    logger.warning("ffprobe command not available")
+            else:
+                logger.info("ffprobe not available, using fallback mode")
             
             # Fallback to basic file analysis
             logger.info("Using fallback mode for media analysis")
