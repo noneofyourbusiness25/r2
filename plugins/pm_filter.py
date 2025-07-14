@@ -82,7 +82,7 @@ async def pm_text(bot, message):
     if user_id in ADMINS: return # ignore admins
     await message.reply_text(
          text=f"<b>Hᴇʏ {user} ⚡️ ,\n\nSᴇɴᴅ ʏᴏᴜʀ ʀᴇǫᴜᴇsᴛ ɪɴ ᴛʜᴇ ɢʀᴏᴜᴘ ʙᴇʟᴏᴡ ᴛᴏ ɢᴇᴛ ʏᴏᴜʀ ᴍᴏᴠɪᴇ/sᴇʀɪᴇs</b>",   
-         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📝Rᴇᴏ̨ᴜᴇsᴛ ɢʀᴏᴜᴘ", url=f"https://t.me/R3_group1")]])
+         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📝Rᴇᴏ̨ᴜᴇsᴛ ɢʀᴏᴜᴘ", url=f"https://t.me/R_Bots_Updates/18")]])
     )
     await bot.send_message(
         chat_id=LOG_CHANNEL,
@@ -2028,6 +2028,7 @@ async def auto_filter(client, msg, spoll=False):
     temp.SHORT[message.from_user.id] = message.chat.id
     if settings["button"]:
         btn = []
+        logger.info(f"Media Info Debug - ENABLE_MEDIA_INFO value: {ENABLE_MEDIA_INFO}")
         for file in files:
             # Main file button
             file_btn = [
@@ -2038,13 +2039,18 @@ async def auto_filter(client, msg, spoll=False):
             btn.append(file_btn)
             
             # Add media info button for video files
-            if ENABLE_MEDIA_INFO and any(ext in file.file_name.lower() for ext in ['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', '.m4v']):
+            video_extensions = ['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', '.m4v']
+            is_video = any(ext in file.file_name.lower() for ext in video_extensions)
+            logger.info(f"Media Info Debug - File: {file.file_name}, Is Video: {is_video}, ENABLE_MEDIA_INFO: {ENABLE_MEDIA_INFO}")
+            
+            if ENABLE_MEDIA_INFO and is_video:
                 info_btn = [
                     InlineKeyboardButton(
                         text="📊 Media Info", callback_data=f'mediainfo#{file.file_id}'
                     )
                 ]
                 btn.append(info_btn)
+                logger.info(f"Media Info Debug - Button added for: {file.file_name}")
 
         btn.insert(0, 
             [
