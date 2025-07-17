@@ -120,24 +120,14 @@ async def next_page(bot, query):
     settings = await get_settings(query.message.chat.id)
     pre = 'filep' if settings['file_secure'] else 'file'
     if settings['button']:
-        btn = []
-        for file in files:
-            # Main file button
-            file_btn = [
+        btn = [
+            [
                 InlineKeyboardButton(
                     text=f"[{get_size(file.file_size)}] {' '.join(filter(lambda x: not x.startswith('[') and not x.startswith('@') and not x.startswith('www.'), file.file_name.split()))}", callback_data=f'{pre}#{file.file_id}'
-                )
+                ),
             ]
-            btn.append(file_btn)
-            
-            # Add media info button for video files
-            if ENABLE_MEDIA_INFO and any(ext in file.file_name.lower() for ext in ['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', '.m4v']):
-                info_btn = [
-                    InlineKeyboardButton(
-                        text="📊 Media Info", callback_data=f'mediainfo#{file.file_id}'
-                    )
-                ]
-                btn.append(info_btn)
+            for file in files
+        ]
 
         btn.insert(0, 
             [
@@ -360,25 +350,14 @@ async def filter_languages_cb_handler(client: Client, query: CallbackQuery):
     settings = await get_settings(message.chat.id)
     pre = 'filep' if settings['file_secure'] else 'file'
     if settings["button"]:
-        btn = []
-        for file in files:
-            # Main file button
-            file_btn = [
+        btn = [
+            [
                 InlineKeyboardButton(
                     text=f"[{get_size(file.file_size)}] {' '.join(filter(lambda x: not x.startswith('[') and not x.startswith('@') and not x.startswith('www.'), file.file_name.split()))}", callback_data=f'{pre}#{file.file_id}'
-                )
+                ),
             ]
-            btn.append(file_btn)
-            
-            # Add media info button for video files
-            if ENABLE_MEDIA_INFO and any(ext in file.file_name.lower() for ext in ['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', '.m4v']):
-                info_btn = [
-                    InlineKeyboardButton(
-                        text="📊 Media Info", callback_data=f'mediainfo#{file.file_id}'
-                    )
-                ]
-                btn.append(info_btn)
-
+            for file in files
+        ]
         btn.insert(0, 
             [
                 InlineKeyboardButton(f'Sᴇʟᴇᴄᴛ ➢', 'select'),
@@ -557,25 +536,14 @@ async def filter_seasons_cb_handler(client: Client, query: CallbackQuery):
     settings = await get_settings(message.chat.id)
     pre = 'filep' if settings['file_secure'] else 'file'
     if settings["button"]:
-        btn = []
-        for file in files:
-            # Main file button
-            file_btn = [
+        btn = [
+            [
                 InlineKeyboardButton(
                     text=f"[{get_size(file.file_size)}] {' '.join(filter(lambda x: not x.startswith('[') and not x.startswith('@') and not x.startswith('www.'), file.file_name.split()))}", callback_data=f'{pre}#{file.file_id}'
-                )
+                ),
             ]
-            btn.append(file_btn)
-            
-            # Add media info button for video files
-            if ENABLE_MEDIA_INFO and any(ext in file.file_name.lower() for ext in ['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', '.m4v']):
-                info_btn = [
-                    InlineKeyboardButton(
-                        text="📊 Media Info", callback_data=f'mediainfo#{file.file_id}'
-                    )
-                ]
-                btn.append(info_btn)
-
+            for file in files
+        ]
         btn.insert(0, [
             InlineKeyboardButton("𝐒𝐞𝐧𝐝 𝐀𝐥𝐥", callback_data=f"sendfiles#{key}"),
             InlineKeyboardButton("Sᴇʟᴇᴄᴛ ᴀɢᴀɪɴ", callback_data=f"seasons#{key}")
@@ -2027,25 +1995,14 @@ async def auto_filter(client, msg, spoll=False):
     temp.GETALL[key] = files
     temp.SHORT[message.from_user.id] = message.chat.id
     if settings["button"]:
-        btn = []
-        for file in files:
-            # Main file button
-            file_btn = [
+        btn = [
+            [
                 InlineKeyboardButton(
                     text=f"[{get_size(file.file_size)}] {' '.join(filter(lambda x: not x.startswith('[') and not x.startswith('@') and not x.startswith('www.'), file.file_name.split()))}", callback_data=f'{pre}#{file.file_id}'
-                )
+                ),
             ]
-            btn.append(file_btn)
-            
-            # Add media info button for video files
-            if ENABLE_MEDIA_INFO and any(ext in file.file_name.lower() for ext in ['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', '.m4v']):
-                info_btn = [
-                    InlineKeyboardButton(
-                        text="📊 Media Info", callback_data=f'mediainfo#{file.file_id}'
-                    )
-                ]
-                btn.append(info_btn)
-
+            for file in files
+        ]
         btn.insert(0, 
             [
                 InlineKeyboardButton(f'Sᴇʟᴇᴄᴛ ➢', 'select'),
