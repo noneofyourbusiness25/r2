@@ -16,6 +16,7 @@ from database.users_chats_db import db
 from info import CHANNELS, ADMINS, AUTH_CHANNEL, LOG_CHANNEL, PICS, BATCH_FILE_CAPTION, CUSTOM_FILE_CAPTION, PROTECT_CONTENT, CHNL_LNK, GRP_LNK, REQST_CHANNEL, SUPPORT_CHAT_ID, SUPPORT_CHAT, MAX_B_TN, VERIFY, SHORTLINK_API, SHORTLINK_URL, TUTORIAL, IS_TUTORIAL, PREMIUM_USER
 from utils import get_settings, get_size, is_subscribed, save_group_settings, temp, verify_user, check_token, check_verification, get_token, get_shortlink, get_tutorial
 from database.connections_mdb import active_connection
+from util.media_info import media_extractor
 # from plugins.pm_filter import ENABLE_SHORTLINK
 import re, asyncio, os, sys
 import json
@@ -340,6 +341,9 @@ async def start(client, message):
                       InlineKeyboardButton('Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ', url=f'https://t.me/{SUPPORT_CHAT}'),
                       InlineKeyboardButton('Uᴘᴅᴀᴛᴇs Cʜᴀɴɴᴇʟ', url=CHNL_LNK)
                    ],
+                   [
+                      InlineKeyboardButton('📋 Media Info', callback_data=f'mediainfo#{file_id}')
+                   ]
               #       [
                         #InlineKeyboardButton('🚀 Fast Download / Watch Online🖥️', callback_data=f'generate_stream_link:{file_id}') #Don't change anything without contacting me @LazyDeveloperr
 
@@ -404,6 +408,9 @@ async def start(client, message):
                       InlineKeyboardButton('Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ', url=f'https://t.me/{SUPPORT_CHAT}'),
                       InlineKeyboardButton('Uᴘᴅᴀᴛᴇs Cʜᴀɴɴᴇʟ', url=CHNL_LNK)
                    ],
+                   [
+                      InlineKeyboardButton('📋 Media Info', callback_data=f'mediainfo#{file_id}')
+                   ]
               #       [
                         #InlineKeyboardButton('🚀 Fast Download / Watch Online🖥️', callback_data=f'generate_stream_link:{file_id}') #Don't change anything without contacting me @LazyDeveloperr
              #        ]
@@ -465,6 +472,9 @@ async def start(client, message):
               InlineKeyboardButton('Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ', url=f'https://t.me/{SUPPORT_CHAT}'),
               InlineKeyboardButton('Uᴘᴅᴀᴛᴇs Cʜᴀɴɴᴇʟ', url=CHNL_LNK)
            ],
+           [
+              InlineKeyboardButton('📋 Media Info', callback_data=f'mediainfo#{file_id}')
+           ]
        #      [
            #   InlineKeyboardButton('🚀 Fast Download / Watch Online🖥️', callback_data=f'generate_stream_link:{file_id}') #Don't change anything without contacting me @LazyDeveloperr
         #     ]
@@ -1122,3 +1132,79 @@ async def stop_button(bot, message):
     await asyncio.sleep(3)
     await msg.edit("**✅️ 𝙱𝙾𝚃 𝙸𝚂 𝚁𝙴𝚂𝚃𝙰𝚁𝚃𝙴𝙳. 𝙽𝙾𝚆 𝚈𝙾𝚄 𝙲𝙰𝙽 𝚄𝚂𝙴 𝙼𝙴**")
     os.execl(sys.executable, sys.executable, *sys.argv)
+
+@Client.on_callback_query(filters.regex(r"^mediainfo#"))
+async def media_info_callback(client, query):
+    """Handle media info button callback"""
+    try:
+        _, file_id = query.data.split("#")
+        
+        # Get file details from database
+        files_ = await get_file_details(file_id)
+        if not files_:
+            return await query.answer("❌ File not found!", show_alert=True)
+        
+        files = files_[0]
+        file_name = files.file_name
+        
+        # Show processing message
+        processing_msg = await query.message.reply_text(
+            "🔄 <b>Extracting media information...</b>\n\n"
+            "This may take a few seconds for the first time.",
+            quote=True
+        )
+        
+        # Extract media info
+        media_info = await media_extractor.extract_media_info(client, file_id, file_name)
+        
+        if media_info:
+            # Format the information message
+            info_message = media_extractor.format_media_info_message(media_info, file_name)
+            
+            # Add close button
+            keyboard = InlineKeyboardMarkup([
+                [InlineKeyboardButton("❌ Close Info", callback_data="close_mediainfo")]
+            ])
+            
+            # Edit the processing message with media info
+            await processing_msg.edit_text(
+                text=info_message,
+                reply_markup=keyboard,
+                parse_mode=enums.ParseMode.HTML
+            )
+            
+            # Auto-delete after 2 minutes to keep chat clean
+            asyncio.create_task(auto_delete_media_info(processing_msg, 120))
+            
+        else:
+            await processing_msg.edit_text(
+                "❌ <b>Could not extract media information</b>\n\n"
+                "This file format might not be supported or the file might be corrupted."
+            )
+            
+            # Auto-delete after 30 seconds
+            asyncio.create_task(auto_delete_media_info(processing_msg, 30))
+        
+        await query.answer()
+        
+    except Exception as e:
+        logger.error(f"Error in media info callback: {e}")
+        await query.answer("❌ Error extracting media information", show_alert=True)
+
+@Client.on_callback_query(filters.regex(r"^close_mediainfo"))
+async def close_media_info(client, query):
+    """Handle close media info button"""
+    try:
+        await query.message.delete()
+        await query.answer("Media info closed")
+    except Exception as e:
+        logger.error(f"Error closing media info: {e}")
+        await query.answer()
+
+async def auto_delete_media_info(message, delay_seconds):
+    """Auto delete media info message after specified delay"""
+    try:
+        await asyncio.sleep(delay_seconds)
+        await message.delete()
+    except Exception as e:
+        logger.error(f"Error auto-deleting media info: {e}")
